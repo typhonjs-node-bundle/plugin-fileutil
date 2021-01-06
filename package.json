@@ -1,0 +1,28 @@
+{
+  "name": "@typhonjs-node-bundle/plugin-fileutil",
+  "description": "Provides a TyphonJS plugin module for essential file utility data handling for bundling CLIs.",
+  "version": "0.0.0",
+  "author": "typhonrt",
+  "private": true,
+  "bugs": "https://github.com/typhonjs-node-bundle/issues/issues",
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^7.0.0",
+    "typhonjs-config-eslint": "^0.6.0"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "/npm-shrinkwrap.json",
+    "/src"
+  ],
+  "homepage": "https://github.com/typhonjs-node-bundle/plugin-fileutil",
+  "keywords": [
+    "oclif"
+  ],
+  "license": "MPL-2.0",
+  "main": "src/FileUtil.js",
+  "repository": "typhonjs-node-bundle/plugin-fileutil",
+  "scripts": {}
+}

@@ -1,0 +1,11 @@
+.idea
+.DS_Store
+npm-debug.log
+*-debug.log
+*-error.log
+/.nyc_output
+/test/deploy
+/dist
+/tmp
+/yarn.lock
+node_modules
