@@ -182,7 +182,10 @@ class FileUtil
                try
                {
                   const module = await import(absFilePath);
-                  return Object.assign(fileInfo, { data: module.default });
+                  if (module.default !== null && module.default !== void 0)
+                  {
+                     return Object.assign(fileInfo, { data: module.default });
+                  }
                }
                catch (errESM)
                {
@@ -190,9 +193,10 @@ class FileUtil
                  + `dynamic import error: ${errESM.message}\n`
                   + `file path: ${FileUtil.getRelativePath(global.$$bundler_origCWD, absFilePath)}`);
                }
-
-               return null;
             }
+
+            // Loading has failed, so don't attempt any more extensions.
+            break;
          }
       }
 
