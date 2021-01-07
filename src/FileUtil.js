@@ -145,7 +145,7 @@ class FileUtil
    }
 
    /**
-    * Attempts to open `basePath/baseFileName[extensions]` until a file successfully loads.
+    * Attempts to open `basePath/baseFileName[extensions]` until a file attempts to loads (success or fail).
     *
     * @param {string}   basePath - The base file path.
     * @param {string}   baseFileName - The base file name without extension.
@@ -154,30 +154,42 @@ class FileUtil
     *
     * @returns {null|{absFilePath: string, extension: *, fileName: string, data: *, relativePath, baseFileName}}
     */
-   static openFiles(basePath, baseFileName, extensions = [], errorMessage = '')
+   static async openFiles(basePath, baseFileName, extensions = [], errorMessage = '')
    {
       for (const extension of extensions)
       {
          const fileName = `${baseFileName}${extension}`;
          const absFilePath = `${basePath}${path.sep}${fileName}`;
+         const relativePath = FileUtil.getRelativePath(global.$$bundler_baseCWD, absFilePath)
+
+         const fileInfo = {
+            absFilePath,
+            baseFileName,
+            extension,
+            fileName,
+            relativePath
+         }
 
          if (fs.existsSync(absFilePath))
          {
             try
             {
-               return {
-                  absFilePath,
-                  baseFileName,
-                  data: require(absFilePath),
-                  extension,
-                  fileName,
-                  relativePath: FileUtil.getRelativePath(global.$$bundler_origCWD, absFilePath)
-               }
+               // Attempt require; it will fail for ESM imports, but work for CJS / JSON.
+               return Object.assign(fileInfo, { data: require(absFilePath) });
             }
             catch(err)
             {
-               global.$$eventbus.trigger('log:warn',
-                `${errorMessage}${err.message}:\n${FileUtil.getRelativePath(global.$$bundler_origCWD, absFilePath)}`);
+               try
+               {
+                  const data = await import(absFilePath);
+                  return Object.assign(fileInfo, { data });
+               }
+               catch (errESM)
+               {
+                  global.$$eventbus.trigger('log:warn', `${errorMessage}\nrequire error: ${err.message}\n`
+                 + `dynamic import error: ${errESM.message}\n`
+                  + `relative path: ${FileUtil.getRelativePath(global.$$bundler_origCWD, absFilePath)}`);
+               }
 
                return null;
             }
@@ -196,17 +208,15 @@ class FileUtil
     *
     * @returns {{absFilePath: string, extension: *, fileName: string, data: *, relativePath, baseFileName}|null}
     */
-   static openLocalConfigs(baseFileName, extensions = [], errorMessage = '')
+   static async openLocalConfigs(baseFileName, extensions = [], errorMessage = '')
    {
-      // Attempt to load from CWD path if it is not the original CWD.
+      // Attempt to load from new CWD path if it is not the original CWD.
       if (global.$$bundler_baseCWD !== global.$$bundler_origCWD)
       {
-         const data = FileUtil.openFiles(global.$$bundler_baseCWD, baseFileName, extensions, errorMessage);
+         const data = await FileUtil.openFiles(global.$$bundler_baseCWD, baseFileName, extensions, errorMessage);
 
-         if (data !== null)
-         {
-            return data;
-         }
+         // Early out as we found the config on the base CWD which is modified from the original CWD.
+         if (data !== null) { return data; }
       }
 
       // Attempt to load from original CWD path.
