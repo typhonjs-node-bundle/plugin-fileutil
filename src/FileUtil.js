@@ -188,7 +188,7 @@ class FileUtil
                {
                   global.$$eventbus.trigger('log:warn', `${errorMessage}\nrequire error: ${err.message}\n`
                  + `dynamic import error: ${errESM.message}\n`
-                  + `relative path: ${FileUtil.getRelativePath(global.$$bundler_origCWD, absFilePath)}`);
+                  + `file path: ${FileUtil.getRelativePath(global.$$bundler_origCWD, absFilePath)}`);
                }
 
                return null;
