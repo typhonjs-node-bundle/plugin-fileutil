@@ -181,8 +181,8 @@ class FileUtil
             {
                try
                {
-                  const data = await import(absFilePath);
-                  return Object.assign(fileInfo, { data });
+                  const module = await import(absFilePath);
+                  return Object.assign(fileInfo, { data: module.default });
                }
                catch (errESM)
                {
