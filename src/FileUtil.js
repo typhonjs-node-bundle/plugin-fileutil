@@ -285,10 +285,10 @@ class FileUtil
       // Normalize the result from cosmiconfig with a little extra data.
       return {
          config: result.config,
-         absFilePath: result.filePath,
-         fileName: path.basename(result.filePath),
-         extension: path.extname(result.filePath).toLowerCase(),
-         relativePath: FileUtil.getRelativePath(global.$$bundler_baseCWD, result.filePath)
+         filepath: result.filepath,
+         filename: path.basename(result.filepath),
+         extension: path.extname(result.filepath).toLowerCase(),
+         relativePath: FileUtil.getRelativePath(global.$$bundler_baseCWD, result.filepath)
       }
    }
 
