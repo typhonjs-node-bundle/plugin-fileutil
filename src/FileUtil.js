@@ -3,6 +3,8 @@ const path              = require("path");
 
 const { cosmiconfig }   = require('cosmiconfig');
 
+const esmLoader         = require('./esmLoader');
+
 const s_EXT_JS = new Map([['.js', 1], ['.jsx', 1], ['.es6', 1], ['.es', 1], ['.mjs', 1]]);
 const s_EXT_TS = new Map([['.ts', 1], ['.tsx', 1]]);
 
@@ -11,6 +13,27 @@ const s_BABEL_CONFIG = new Map([['.babelrc', 1], ['.babelrc.cjs', 1], ['.babelrc
   ['babel.config.mjs', 1]]);
 
 const s_TSC_CONFIG = new Map([['tsconfig.json', 1], ['jsconfig.json', 1]]);
+
+/**
+ * Defines the default configuration file locations `cosmiconfig`.
+ *
+ * @param {string}   moduleName - The module name to build the default locations.
+ *
+ * @returns {string[]}
+ */
+const s_DEFAULT_COSMIC_SEARCHPLACES = (moduleName) => [
+   'package.json',
+   `.${moduleName}rc`,
+   `.${moduleName}rc.json`,
+   `.${moduleName}rc.yaml`,
+   `.${moduleName}rc.yml`,
+   `.${moduleName}rc.js`,
+   `.${moduleName}rc.mjs`,
+   `.${moduleName}rc.cjs`,
+   `${moduleName}.config.js`,
+   `${moduleName}.config.mjs`,
+   `${moduleName}.config.cjs`,
+];
 
 /**
  * Provides a few utility functions to walk the local file tree.
@@ -226,11 +249,19 @@ class FileUtil
       return FileUtil.openFiles(global.$$bundler_origCWD, baseFileName, extensions, errorMessage);
    }
 
-   static async openLocalCosmic(moduleName, errorMessage = '')
+   /**
+    *
+    * @param options
+    * @returns {Promise<*>}
+    */
+   static async openLocalCosmic(options)
    {
-      global.$$eventbus.triggerAsync('typhonjs:oclif:system:file:util:cosmic:support:get');
+      if (typeof options !== 'object') { throw new TypeError(`'options' is not an 'object'`); }
+      if (typeof options.moduleName !== 'string') { throw new TypeError(`'options.moduleName' is not a 'string'`); }
 
-      const remoteCosmic = await eventbus.triggerAsync(
+      const moduleName = options.moduleName;
+
+      const remoteCosmic = await global.$$eventbus.triggerAsync(
        'typhonjs:oclif:system:file:util:cosmic:support:get', moduleName);
 
       let mergeCosmic = [];
@@ -242,15 +273,20 @@ class FileUtil
          else { mergeCosmic = remoteCosmic.flat().filter((entry) => entry !== void 0); }
       }
 
-process.stderr.write(`!!! FileUtil - openLocalCosmic - mergeCosmic: ${JSON.stringify(mergeCosmic)}\n`);
-      const searchPlaces = [];
-      let loaders = {};
+      process.stderr.write(`!!! FileUtil - openLocalCosmic - mergeCosmic: ${JSON.stringify(mergeCosmic)}\n`);
 
-      for (cosmic of mergeCosmic)
+      const searchPlacesMerge = Array.isArray(options.searchPlaces) ? searchPlaces :
+       s_DEFAULT_COSMIC_SEARCHPLACES(moduleName);
+
+      let loaders = {
+         '.mjs': esmLoader
+      };
+
+      for (const cosmic of mergeCosmic)
       {
          if (Array.isArray(cosmic.searchPlaces))
          {
-            searchPlaces.push(...cosmic.searchPlaces);
+            searchPlacesMerge.push(...cosmic.searchPlaces);
          }
 
          if (typeof cosmic.loaders === 'object')
@@ -259,34 +295,15 @@ process.stderr.write(`!!! FileUtil - openLocalCosmic - mergeCosmic: ${JSON.strin
          }
       }
 
-      const options = {
+      const cosmicOptions = {
          stopDir: global.$$bundler_origCWD,
          loaders,
-         searchPlaces
+         searchPlaces: searchPlacesMerge
       }
 
-process.stderr.write(`!!! FileUtil - openLocalCosmic - options: ${JSON.stringify(options)}\n`);
+process.stderr.write(`!!! FileUtil - openLocalCosmic - options: ${JSON.stringify(cosmicOptions)}\n`);
 
-      const explorer = cosmiconfig(moduleName, options);
-
-//     `.${moduleName}rc.ts`,
-//    `${moduleName}.config.ts`,
-      /*
-const explorer = cosmiconfig(moduleName, {
-  searchPlaces: [
-    'package.json',
-    `.${moduleName}rc`,
-    `.${moduleName}rc.json`,
-    `.${moduleName}rc.yaml`,
-    `.${moduleName}rc.yml`,
-    `.${moduleName}rc.js`,
-    `${moduleName}.config.js`,
-  ],
-  loaders: {
-    '.ts': TypeScriptLoader,
-  },
-});
- */
+      const explorer = cosmiconfig(moduleName, cosmicOptions);
 
 process.stderr.write(`!!! FileUtil - openLocalCosmic - baseCWD: ${global.$$bundler_baseCWD}\n`);
 
