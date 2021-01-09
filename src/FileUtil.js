@@ -1,5 +1,7 @@
-const fs             = require("fs");
-const path           = require("path");
+const fs                = require("fs");
+const path              = require("path");
+
+const { cosmiconfig }   = require('cosmiconfig');
 
 const s_EXT_JS = new Map([['.js', 1], ['.jsx', 1], ['.es6', 1], ['.es', 1], ['.mjs', 1]]);
 const s_EXT_TS = new Map([['.ts', 1], ['.tsx', 1]]);
@@ -224,9 +226,71 @@ class FileUtil
       return FileUtil.openFiles(global.$$bundler_origCWD, baseFileName, extensions, errorMessage);
    }
 
-   static async openLocalCosmic(packageName, errorMessage = '')
+   static async openLocalCosmic(moduleName, errorMessage = '')
    {
+      global.$$eventbus.triggerAsync('typhonjs:oclif:system:file:util:cosmic:support:get');
 
+      const remoteCosmic = await eventbus.triggerAsync(
+       'typhonjs:oclif:system:file:util:cosmic:support:get', moduleName);
+
+      let mergeCosmic = [];
+
+      // Make sure remote input plugins is structured as an array.
+      if (remoteCosmic !== void 0)
+      {
+         if (!Array.isArray(remoteCosmic)) { mergeCosmic.push(remoteCosmic); }
+         else { mergeCosmic = remoteCosmic.flat().filter((entry) => entry !== void 0); }
+      }
+
+process.stderr.write(`!!! FileUtil - openLocalCosmic - mergeCosmic: ${JSON.stringify(mergeCosmic)}\n`);
+      const searchPlaces = [];
+      let loaders = {};
+
+      for (cosmic of mergeCosmic)
+      {
+         if (Array.isArray(cosmic.searchPlaces))
+         {
+            searchPlaces.push(...cosmic.searchPlaces);
+         }
+
+         if (typeof cosmic.loaders === 'object')
+         {
+            loaders = Object.assign(loaders, cosmic.loaders);
+         }
+      }
+
+      const options = {
+         stopDir: global.$$bundler_origCWD,
+         loaders,
+         searchPlaces
+      }
+
+process.stderr.write(`!!! FileUtil - openLocalCosmic - options: ${JSON.stringify(options)}\n`);
+
+      const explorer = cosmiconfig(moduleName, options);
+
+//     `.${moduleName}rc.ts`,
+//    `${moduleName}.config.ts`,
+      /*
+const explorer = cosmiconfig(moduleName, {
+  searchPlaces: [
+    'package.json',
+    `.${moduleName}rc`,
+    `.${moduleName}rc.json`,
+    `.${moduleName}rc.yaml`,
+    `.${moduleName}rc.yml`,
+    `.${moduleName}rc.js`,
+    `${moduleName}.config.js`,
+  ],
+  loaders: {
+    '.ts': TypeScriptLoader,
+  },
+});
+ */
+
+process.stderr.write(`!!! FileUtil - openLocalCosmic - baseCWD: ${global.$$bundler_baseCWD}\n`);
+
+      return await explorer.search(global.$$bundler_baseCWD);
    }
 
    /**
