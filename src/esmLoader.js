@@ -1,3 +1,5 @@
+const path           = require('path');
+
 const getPackageType = require('get-package-type');
 
 /**

@@ -30,9 +30,15 @@ const s_DEFAULT_COSMIC_SEARCHPLACES = (moduleName) => [
    `.${moduleName}rc.js`,
    `.${moduleName}rc.mjs`,
    `.${moduleName}rc.cjs`,
+   `.${moduleName}.json`,
+   `.${moduleName}.yaml`,
+   `.${moduleName}.yml`,
    `${moduleName}.config.js`,
    `${moduleName}.config.mjs`,
    `${moduleName}.config.cjs`,
+   `${moduleName}.config.json`,
+   `${moduleName}.config.yaml`,
+   `${moduleName}.config.yml`
 ];
 
 /**
@@ -169,98 +175,135 @@ class FileUtil
       return s_EXT_TS.has(extension);
    }
 
+   // TODO REMOVE
+   // /**
+   //  * Attempts to open `basePath/baseFileName[extensions]` until a file attempts to loads (success or fail).
+   //  *
+   //  * @param {string}   basePath - The base file path.
+   //  * @param {string}   baseFileName - The base file name without extension.
+   //  * @param {string[]} extensions - An array of extensions to attach to `baseFileName`.
+   //  * @param {string}   [errorMessage] - A message to prefix to any generated errors.
+   //  *
+   //  * @returns {null|{absFilePath: string, extension: *, fileName: string, data: *, relativePath, baseFileName}}
+   //  */
+   // static async openFiles(basePath, baseFileName, extensions = [], errorMessage = '')
+   // {
+   //    for (const extension of extensions)
+   //    {
+   //       const fileName = `${baseFileName}${extension}`;
+   //       const absFilePath = `${basePath}${path.sep}${fileName}`;
+   //       const relativePath = FileUtil.getRelativePath(global.$$bundler_baseCWD, absFilePath)
+   //
+   //       const fileInfo = {
+   //          absFilePath,
+   //          baseFileName,
+   //          extension,
+   //          fileName,
+   //          relativePath
+   //       }
+   //
+   //       if (fs.existsSync(absFilePath))
+   //       {
+   //          try
+   //          {
+   //             // Attempt require; it will fail for ESM imports, but work for CJS / JSON.
+   //             return Object.assign(fileInfo, { data: require(absFilePath) });
+   //          }
+   //          catch(err)
+   //          {
+   //             try
+   //             {
+   //                const module = await import(absFilePath);
+   //                return Object.assign(fileInfo, { data: module.default });
+   //             }
+   //             catch (errESM)
+   //             {
+   //                global.$$eventbus.trigger('log:warn', `${errorMessage}\nrequire error: ${err.message}\n`
+   //               + `dynamic import error: ${errESM.message}\n`
+   //                + `file path: ${FileUtil.getRelativePath(global.$$bundler_origCWD, absFilePath)}`);
+   //             }
+   //          }
+   //
+   //          // Loading has failed, so don't attempt any more extensions.
+   //          break;
+   //       }
+   //    }
+   //
+   //    return null;
+   // }
+   //
+   // /**
+   //  * Attempts to open local configuration files first in the modified CWD if applicable before the original CWD.
+   //  *
+   //  * @param {string}   baseFileName - The base file name without extension.
+   //  * @param {string[]} extensions - An array of extensions to attach to `baseFileName`.
+   //  * @param {string}   [errorMessage] - A message to prefix to any generated errors.
+   //  *
+   //  * @returns {{absFilePath: string, extension: *, fileName: string, data: *, relativePath, baseFileName}|null}
+   //  */
+   // static async openLocalConfigs(baseFileName, extensions = [], errorMessage = '')
+   // {
+   //    // Attempt to load from new CWD path if it is not the original CWD.
+   //    if (global.$$bundler_baseCWD !== global.$$bundler_origCWD)
+   //    {
+   //       const data = await FileUtil.openFiles(global.$$bundler_baseCWD, baseFileName, extensions, errorMessage);
+   //
+   //       // Early out as we found the config on the base CWD which is modified from the original CWD.
+   //       if (data !== null) { return data; }
+   //    }
+   //
+   //    // Attempt to load from original CWD path.
+   //    return FileUtil.openFiles(global.$$bundler_origCWD, baseFileName, extensions, errorMessage);
+   // }
+
    /**
-    * Attempts to open `basePath/baseFileName[extensions]` until a file attempts to loads (success or fail).
+    * Uses cosmiconfig to attempt to load a local configuration file based on a module name. Other plugins may
+    * provide additional file type support. For instance `@typhonjs-node-rollup/plugin-typescript` provides support for
+    * loading Typescript configuration files.
     *
-    * @param {string}   basePath - The base file path.
-    * @param {string}   baseFileName - The base file name without extension.
-    * @param {string[]} extensions - An array of extensions to attach to `baseFileName`.
-    * @param {string}   [errorMessage] - A message to prefix to any generated errors.
+    * The default locations for config file loading given a module name are as follows. This is an exhaustive list.
     *
-    * @returns {null|{absFilePath: string, extension: *, fileName: string, data: *, relativePath, baseFileName}}
-    */
-   static async openFiles(basePath, baseFileName, extensions = [], errorMessage = '')
-   {
-      for (const extension of extensions)
-      {
-         const fileName = `${baseFileName}${extension}`;
-         const absFilePath = `${basePath}${path.sep}${fileName}`;
-         const relativePath = FileUtil.getRelativePath(global.$$bundler_baseCWD, absFilePath)
-
-         const fileInfo = {
-            absFilePath,
-            baseFileName,
-            extension,
-            fileName,
-            relativePath
-         }
-
-         if (fs.existsSync(absFilePath))
-         {
-            try
-            {
-               // Attempt require; it will fail for ESM imports, but work for CJS / JSON.
-               return Object.assign(fileInfo, { data: require(absFilePath) });
-            }
-            catch(err)
-            {
-               try
-               {
-                  const module = await import(absFilePath);
-                  return Object.assign(fileInfo, { data: module.default });
-               }
-               catch (errESM)
-               {
-                  global.$$eventbus.trigger('log:warn', `${errorMessage}\nrequire error: ${err.message}\n`
-                 + `dynamic import error: ${errESM.message}\n`
-                  + `file path: ${FileUtil.getRelativePath(global.$$bundler_origCWD, absFilePath)}`);
-               }
-            }
-
-            // Loading has failed, so don't attempt any more extensions.
-            break;
-         }
-      }
-
-      return null;
-   }
-
-   /**
-    * Attempts to open local configuration files first in the modified CWD if applicable before the original CWD.
+    * 'package.json',
+    * `.${moduleName}rc`,
+    * `.${moduleName}rc.json`,
+    * `.${moduleName}rc.yaml`,
+    * `.${moduleName}rc.yml`,
+    * `.${moduleName}rc.js`,
+    * `.${moduleName}rc.mjs`,
+    * `.${moduleName}rc.cjs`,
+    * `.${moduleName}.json`,
+    * `.${moduleName}.yaml`,
+    * `.${moduleName}.yml`,
+    * `${moduleName}.config.js`,
+    * `${moduleName}.config.mjs`,
+    * `${moduleName}.config.cjs`,
+    * `${moduleName}.config.json`,
+    * `${moduleName}.config.yaml`,
+    * `${moduleName}.config.yml`
     *
-    * @param {string}   baseFileName - The base file name without extension.
-    * @param {string[]} extensions - An array of extensions to attach to `baseFileName`.
-    * @param {string}   [errorMessage] - A message to prefix to any generated errors.
+    * @param {object}   options
     *
-    * @returns {{absFilePath: string, extension: *, fileName: string, data: *, relativePath, baseFileName}|null}
-    */
-   static async openLocalConfigs(baseFileName, extensions = [], errorMessage = '')
-   {
-      // Attempt to load from new CWD path if it is not the original CWD.
-      if (global.$$bundler_baseCWD !== global.$$bundler_origCWD)
-      {
-         const data = await FileUtil.openFiles(global.$$bundler_baseCWD, baseFileName, extensions, errorMessage);
-
-         // Early out as we found the config on the base CWD which is modified from the original CWD.
-         if (data !== null) { return data; }
-      }
-
-      // Attempt to load from original CWD path.
-      return FileUtil.openFiles(global.$$bundler_origCWD, baseFileName, extensions, errorMessage);
-   }
-
-   /**
+    * @param {string}   options.moduleName - The module name to load a config file.
     *
-    * @param options
+    * @param {string[]} [options.mergeExternal=true] - When set to false will not merge any external plugin defined
+    *                                                  `searchPlaces`.
+    *
+    * @param {string[]} [options.searchPlaces] - Explicit list of search places.
+    *
+    * @param {string}   [options.errorMessage] - An error message to prefix to logging.
+    *
     * @returns {Promise<*>}
     */
-   static async openLocalCosmic(options)
+   static async openConfig(options)
    {
       if (typeof options !== 'object') { throw new TypeError(`'options' is not an 'object'`); }
       if (typeof options.moduleName !== 'string') { throw new TypeError(`'options.moduleName' is not a 'string'`); }
 
       const moduleName = options.moduleName;
+      const errorMessage = typeof options.errorMessage === 'string' ? options.errorMessage : '';
+      const mergeExternal = typeof options.mergeExternal === 'boolean' ? options.mergeExternal : true;
 
+      // Make a request for any externally provided cosmiconfig plugin support.
       const remoteCosmic = await global.$$eventbus.triggerAsync(
        'typhonjs:oclif:system:file:util:cosmic:support:get', moduleName);
 
@@ -273,7 +316,7 @@ class FileUtil
          else { mergeCosmic = remoteCosmic.flat().filter((entry) => entry !== void 0); }
       }
 
-      process.stderr.write(`!!! FileUtil - openLocalCosmic - mergeCosmic: ${JSON.stringify(mergeCosmic)}\n`);
+      // Merge results -------------------
 
       const searchPlacesMerge = Array.isArray(options.searchPlaces) ? searchPlaces :
        s_DEFAULT_COSMIC_SEARCHPLACES(moduleName);
@@ -283,9 +326,10 @@ class FileUtil
          '.mjs': esmLoader
       };
 
+      // Merge results from externally provided cosmiconfig data (searchPlaces & loaders).
       for (const cosmic of mergeCosmic)
       {
-         if (Array.isArray(cosmic.searchPlaces))
+         if (mergeExternal && Array.isArray(cosmic.searchPlaces))
          {
             searchPlacesMerge.push(...cosmic.searchPlaces);
          }
@@ -296,19 +340,37 @@ class FileUtil
          }
       }
 
+      // Define to cosmiconfig options. Stop at the original CWD.
       const cosmicOptions = {
          stopDir: global.$$bundler_origCWD,
          loaders,
          searchPlaces: searchPlacesMerge
       }
 
-process.stderr.write(`!!! FileUtil - openLocalCosmic - options: ${JSON.stringify(cosmicOptions)}\n`);
-
       const explorer = cosmiconfig(moduleName, cosmicOptions);
 
-process.stderr.write(`!!! FileUtil - openLocalCosmic - baseCWD: ${global.$$bundler_baseCWD}\n`);
+      let result = null;
 
-      return await explorer.search(global.$$bundler_baseCWD);
+      try
+      {
+         result = await explorer.search(global.$$bundler_baseCWD);
+      }
+      catch(error)
+      {
+         global.$$eventbus.trigger('log:warn', `${errorMessage}\n${error.message}`);
+      }
+
+      // Potentially return null at this point before formatting the final result.
+      if (result === null) { return null; }
+
+      // Normalize the result from cosmiconfig with a little extra data.
+      return {
+         config: result.config,
+         absFilePath: result.filePath,
+         fileName: path.basename(result.filePath),
+         extension: path.extname(result.filePath).toLowerCase(),
+         relativePath: FileUtil.getRelativePath(global.$$bundler_baseCWD, result.filePath)
+      }
    }
 
    /**
@@ -394,11 +456,13 @@ process.stderr.write(`!!! FileUtil - openLocalCosmic - baseCWD: ${global.$$bundl
       eventbus.on(`typhonjs:oclif:system:file:util:config:typescript:has`, FileUtil.hasTscConfig, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:is:js`, FileUtil.isJS, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:is:ts`, FileUtil.isTS, FileUtil);
-      eventbus.on(`typhonjs:oclif:system:file:util:files:open`, FileUtil.openFiles, FileUtil);
-      eventbus.on(`typhonjs:oclif:system:file:util:configs:local:open`, FileUtil.openLocalConfigs, FileUtil);
-      eventbus.on(`typhonjs:oclif:system:file:util:cosmic:local:open`, FileUtil.openLocalCosmic, FileUtil);
+      eventbus.on(`typhonjs:oclif:system:file:util:config:open`, FileUtil.openConfig, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:dir:walk`, FileUtil.walkDir, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:files:walk`, FileUtil.walkFiles, FileUtil);
+
+      // TODO REMOVE
+      // eventbus.on(`typhonjs:oclif:system:file:util:files:open`, FileUtil.openFiles, FileUtil);
+      // eventbus.on(`typhonjs:oclif:system:file:util:configs:local:open`, FileUtil.openLocalConfigs, FileUtil);
    }
 }
 
