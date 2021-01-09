@@ -175,87 +175,6 @@ class FileUtil
       return s_EXT_TS.has(extension);
    }
 
-   // TODO REMOVE
-   // /**
-   //  * Attempts to open `basePath/baseFileName[extensions]` until a file attempts to loads (success or fail).
-   //  *
-   //  * @param {string}   basePath - The base file path.
-   //  * @param {string}   baseFileName - The base file name without extension.
-   //  * @param {string[]} extensions - An array of extensions to attach to `baseFileName`.
-   //  * @param {string}   [errorMessage] - A message to prefix to any generated errors.
-   //  *
-   //  * @returns {null|{absFilePath: string, extension: *, fileName: string, data: *, relativePath, baseFileName}}
-   //  */
-   // static async openFiles(basePath, baseFileName, extensions = [], errorMessage = '')
-   // {
-   //    for (const extension of extensions)
-   //    {
-   //       const fileName = `${baseFileName}${extension}`;
-   //       const absFilePath = `${basePath}${path.sep}${fileName}`;
-   //       const relativePath = FileUtil.getRelativePath(global.$$bundler_baseCWD, absFilePath)
-   //
-   //       const fileInfo = {
-   //          absFilePath,
-   //          baseFileName,
-   //          extension,
-   //          fileName,
-   //          relativePath
-   //       }
-   //
-   //       if (fs.existsSync(absFilePath))
-   //       {
-   //          try
-   //          {
-   //             // Attempt require; it will fail for ESM imports, but work for CJS / JSON.
-   //             return Object.assign(fileInfo, { data: require(absFilePath) });
-   //          }
-   //          catch(err)
-   //          {
-   //             try
-   //             {
-   //                const module = await import(absFilePath);
-   //                return Object.assign(fileInfo, { data: module.default });
-   //             }
-   //             catch (errESM)
-   //             {
-   //                global.$$eventbus.trigger('log:warn', `${errorMessage}\nrequire error: ${err.message}\n`
-   //               + `dynamic import error: ${errESM.message}\n`
-   //                + `file path: ${FileUtil.getRelativePath(global.$$bundler_origCWD, absFilePath)}`);
-   //             }
-   //          }
-   //
-   //          // Loading has failed, so don't attempt any more extensions.
-   //          break;
-   //       }
-   //    }
-   //
-   //    return null;
-   // }
-   //
-   // /**
-   //  * Attempts to open local configuration files first in the modified CWD if applicable before the original CWD.
-   //  *
-   //  * @param {string}   baseFileName - The base file name without extension.
-   //  * @param {string[]} extensions - An array of extensions to attach to `baseFileName`.
-   //  * @param {string}   [errorMessage] - A message to prefix to any generated errors.
-   //  *
-   //  * @returns {{absFilePath: string, extension: *, fileName: string, data: *, relativePath, baseFileName}|null}
-   //  */
-   // static async openLocalConfigs(baseFileName, extensions = [], errorMessage = '')
-   // {
-   //    // Attempt to load from new CWD path if it is not the original CWD.
-   //    if (global.$$bundler_baseCWD !== global.$$bundler_origCWD)
-   //    {
-   //       const data = await FileUtil.openFiles(global.$$bundler_baseCWD, baseFileName, extensions, errorMessage);
-   //
-   //       // Early out as we found the config on the base CWD which is modified from the original CWD.
-   //       if (data !== null) { return data; }
-   //    }
-   //
-   //    // Attempt to load from original CWD path.
-   //    return FileUtil.openFiles(global.$$bundler_origCWD, baseFileName, extensions, errorMessage);
-   // }
-
    /**
     * Uses cosmiconfig to attempt to load a local configuration file based on a module name. Other plugins may
     * provide additional file type support. For instance `@typhonjs-node-rollup/plugin-typescript` provides support for
@@ -459,10 +378,6 @@ class FileUtil
       eventbus.on(`typhonjs:oclif:system:file:util:config:open`, FileUtil.openConfig, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:dir:walk`, FileUtil.walkDir, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:files:walk`, FileUtil.walkFiles, FileUtil);
-
-      // TODO REMOVE
-      // eventbus.on(`typhonjs:oclif:system:file:util:files:open`, FileUtil.openFiles, FileUtil);
-      // eventbus.on(`typhonjs:oclif:system:file:util:configs:local:open`, FileUtil.openLocalConfigs, FileUtil);
    }
 }
 
