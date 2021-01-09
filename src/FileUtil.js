@@ -304,6 +304,8 @@ class FileUtil
     *
     * @param {string}   [options.defaultConfig=null] - The default configuration if loading fails.
     *
+    * @param {object}   [options.cliFlags=null] - The CLI flags. Parsed for `--ignore-local-config`
+    *
     * @param {string[]} [options.mergeExternal=true] - When set to false will not merge any external plugin defined
     *                                                  `searchPlaces`.
     *
@@ -319,6 +321,13 @@ class FileUtil
       const moduleName = options.moduleName;
       const defaultConfig = typeof options.defaultConfig === 'object' ? options.defaultConfig : null;
       const packageName = typeof options.packageName === 'string' ? `${options.packageName}: `: '';
+      const cliFlags = typeof options.cliFlags === 'object' ? `${options.cliFlags}: `: {};
+
+      // Handle ignoring loading local config files if the CLI flag `--ignore-local-config` is true.
+      if (typeof cliFlags['ignore-local-config'] === 'boolean' && cliFlags['ignore-local-config'])
+      {
+         return defaultConfig;
+      }
 
       const result = await FileUtil.openConfig(options);
 
