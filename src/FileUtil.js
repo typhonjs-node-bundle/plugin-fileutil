@@ -204,12 +204,12 @@ class FileUtil
     *
     * @param {string}   options.moduleName - The module name to load a config file.
     *
+    * @param {string}   [options.packageName] - The package name for the module loading this configuration file.
+    *
     * @param {string[]} [options.mergeExternal=true] - When set to false will not merge any external plugin defined
     *                                                  `searchPlaces`.
     *
     * @param {string[]} [options.searchPlaces] - Explicit list of search places.
-    *
-    * @param {string}   [options.errorMessage] - An error message to prefix to logging.
     *
     * @returns {Promise<*>}
     */
@@ -219,7 +219,7 @@ class FileUtil
       if (typeof options.moduleName !== 'string') { throw new TypeError(`'options.moduleName' is not a 'string'`); }
 
       const moduleName = options.moduleName;
-      const errorMessage = typeof options.errorMessage === 'string' ? options.errorMessage : '';
+      const packageName = typeof options.packageName === 'string' ? `${options.packageName}: `: '';
       const mergeExternal = typeof options.mergeExternal === 'boolean' ? options.mergeExternal : true;
 
       // Make a request for any externally provided cosmiconfig plugin support.
@@ -276,7 +276,8 @@ class FileUtil
       }
       catch(error)
       {
-         global.$$eventbus.trigger('log:warn', `${errorMessage}\n${error.message}`);
+         global.$$eventbus.trigger('log:error',
+          `${packageName}Loading local configuration file for ${moduleName} failed...\n${error.message}`);
       }
 
       // Potentially return null at this point before formatting the final result.
@@ -290,6 +291,64 @@ class FileUtil
          extension: path.extname(result.filepath).toLowerCase(),
          relativePath: FileUtil.getRelativePath(global.$$bundler_baseCWD, result.filepath)
       }
+   }
+
+   /**
+    * Opens a local configuration file with additional sanity checking and handling of a provided default config.
+    *
+    * @param {object}   options
+    *
+    * @param {string}   options.moduleName - The module name to load a config file.
+    *
+    * @param {string}   [options.packageName] - The package name for the module loading this configuration file.
+    *
+    * @param {string}   [options.defaultConfig=null] - The default configuration if loading fails.
+    *
+    * @param {string[]} [options.mergeExternal=true] - When set to false will not merge any external plugin defined
+    *                                                  `searchPlaces`.
+    *
+    * @param {string[]} [options.searchPlaces] - Explicit list of search places.
+    *
+    * @returns {Promise<void>}
+    */
+   static async safeOpenConfig(options)
+   {
+      if (typeof options !== 'object') { throw new TypeError(`'options' is not an 'object'`); }
+      if (typeof options.moduleName !== 'string') { throw new TypeError(`'options.moduleName' is not a 'string'`); }
+
+      const moduleName = options.moduleName;
+      const defaultConfig = typeof options.defaultConfig === 'object' ? options.defaultConfig : null;
+      const packageName = typeof options.packageName === 'string' ? `${options.packageName}: `: '';
+
+      const result = await FileUtil.openConfig(options);
+
+      if (result !== null)
+      {
+         if (typeof result.config === 'object')
+         {
+            if (Object.keys(result.config).length === 0)
+            {
+               global.$$eventbus.trigger('log:warn', `${packageName}Local ${moduleName} configuration file `
+              + `empty using default config:\n${result.relativePath}`);
+
+               return defaultConfig;
+            }
+
+            global.$$eventbus.trigger('log:verbose',
+             `${packageName}Deferring to local ${moduleName} configuration file.\n${result.relativePath}`);
+
+            return result.config;
+         }
+         else
+         {
+            global.$$eventbus.trigger('log:warn', `${packageName}Local ${moduleName} configuration file `
+           + `malformed using default config; expected an 'object':\n${result.relativePath}`);
+
+            return defaultConfig;
+         }
+      }
+
+      return defaultConfig;
    }
 
    /**
@@ -376,6 +435,7 @@ class FileUtil
       eventbus.on(`typhonjs:oclif:system:file:util:is:js`, FileUtil.isJS, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:is:ts`, FileUtil.isTS, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:config:open`, FileUtil.openConfig, FileUtil);
+      eventbus.on(`typhonjs:oclif:system:file:util:config:open:safe`, FileUtil.safeOpenConfig, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:dir:walk`, FileUtil.walkDir, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:files:walk`, FileUtil.walkFiles, FileUtil);
    }
