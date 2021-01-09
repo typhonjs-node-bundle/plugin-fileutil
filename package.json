@@ -6,6 +6,7 @@
   "private": true,
   "bugs": "https://github.com/typhonjs-node-bundle/issues/issues",
   "dependencies": {
+    "get-package-type": "^0.1.0",
     "cosmiconfig": "^7.0.0"
   },
   "devDependencies": {

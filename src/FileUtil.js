@@ -279,6 +279,7 @@ class FileUtil
        s_DEFAULT_COSMIC_SEARCHPLACES(moduleName);
 
       let loaders = {
+         '.js': esmLoader,
          '.mjs': esmLoader
       };
 
