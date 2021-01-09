@@ -224,6 +224,11 @@ class FileUtil
       return FileUtil.openFiles(global.$$bundler_origCWD, baseFileName, extensions, errorMessage);
    }
 
+   static async openLocalCosmic(packageName, errorMessage = '')
+   {
+
+   }
+
    /**
     * A generator function that walks the local file tree.
     *
@@ -309,6 +314,7 @@ class FileUtil
       eventbus.on(`typhonjs:oclif:system:file:util:is:ts`, FileUtil.isTS, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:files:open`, FileUtil.openFiles, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:configs:local:open`, FileUtil.openLocalConfigs, FileUtil);
+      eventbus.on(`typhonjs:oclif:system:file:util:cosmic:local:open`, FileUtil.openLocalCosmic, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:dir:walk`, FileUtil.walkDir, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:files:walk`, FileUtil.walkFiles, FileUtil);
    }
