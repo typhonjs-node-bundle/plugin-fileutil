@@ -113,11 +113,13 @@ export default class FileUtil
     *
     * @param {string} url - A file URL
     *
+    * @param {string} [resolvePaths] - An optional list of paths to resolve against the dir path.
+    *
     * @returns {string}
     */
-   static getURLDirpath(url)
+   static getURLDirpath(url, ...resolvePaths)
    {
-      return path.dirname(fileURLToPath(url));
+      return path.resolve(path.dirname(fileURLToPath(url)), ...resolvePaths);
    }
 
    /**
