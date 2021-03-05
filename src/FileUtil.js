@@ -1,5 +1,6 @@
 import fs                from 'fs';
 import path              from 'path';
+import { fileURLToPath } from 'url';
 
 import { cosmiconfig }   from 'cosmiconfig';
 
@@ -105,6 +106,30 @@ export default class FileUtil
       }
 
       return returnPath;
+   }
+
+   /**
+    * Convenience method to covert a file URL into the file path of the directory
+    *
+    * @param {string} url - A file URL
+    *
+    * @returns {string}
+    */
+   static getURLDirpath(url)
+   {
+      return path.dirname(fileURLToPath(url));
+   }
+
+   /**
+    * Convenience method to convert a file URL into a file path.
+    *
+    * @param {string} url - A file URL
+    *
+    * @returns {string}
+    */
+   static getURLFilepath(url)
+   {
+      return fileURLToPath(url);
    }
 
    /**
@@ -439,6 +464,8 @@ export default class FileUtil
       eventbus.on(`typhonjs:oclif:system:file:util:list:dir:get`, FileUtil.getDirList, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:list:file:get`, FileUtil.getFileList, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:path:relative:get`, FileUtil.getRelativePath, FileUtil);
+      eventbus.on(`typhonjs:oclif:system:file:util:url:path:dir:get`, FileUtil.getURLDirpath, FileUtil);
+      eventbus.on(`typhonjs:oclif:system:file:util:url:path:file:get`, FileUtil.getURLFilepath, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:config:babel:has`, FileUtil.hasBabelConfig, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:config:typescript:has`, FileUtil.hasTscConfig, FileUtil);
       eventbus.on(`typhonjs:oclif:system:file:util:is:js`, FileUtil.isJS, FileUtil);
