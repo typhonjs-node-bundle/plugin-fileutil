@@ -1,6 +1,6 @@
-const path           = require('path');
+import path           from 'path';
 
-const getPackageType = require('get-package-type');
+import getPackageType from 'get-package-type';
 
 /**
  * Uses `getPackageType` to determine if `type` is set to 'module. If so loads '.js' files as ESM otherwise uses
@@ -12,7 +12,7 @@ const getPackageType = require('get-package-type');
  *
  * @returns {Promise<*>}
  */
-module.exports = async (filePath) => {
+export default async (filePath) => {
    const extension = path.extname(filePath).toLowerCase();
 
    switch (extension) {

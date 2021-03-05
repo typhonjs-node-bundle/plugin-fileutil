@@ -1,9 +1,9 @@
-const fs                = require("fs");
-const path              = require("path");
+import fs                from 'fs';
+import path              from 'path';
 
-const { cosmiconfig }   = require('cosmiconfig');
+import { cosmiconfig }   from 'cosmiconfig';
 
-const esmLoader         = require('./esmLoader');
+import esmLoader         from './esmLoader.js';
 
 const s_EXT_JS = new Map([['.js', 1], ['.jsx', 1], ['.es6', 1], ['.es', 1], ['.mjs', 1]]);
 const s_EXT_TS = new Map([['.ts', 1], ['.tsx', 1]]);
@@ -44,7 +44,7 @@ const s_DEFAULT_COSMIC_SEARCHPLACES = (moduleName) => [
 /**
  * Provides a few utility functions to walk the local file tree.
  */
-class FileUtil
+export default class FileUtil
 {
    /**
     * Returns an array of all directories found from walking the directory tree provided.
@@ -449,5 +449,3 @@ class FileUtil
       eventbus.on(`typhonjs:oclif:system:file:util:files:walk`, FileUtil.walkFiles, FileUtil);
    }
 }
-
-module.exports = FileUtil;
